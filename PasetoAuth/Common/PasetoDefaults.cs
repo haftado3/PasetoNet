@@ -1,7 +1,4 @@
-﻿using System.Text;
-using Paseto.Cryptography;
-
-namespace PasetoAuth.Common
+﻿namespace PasetoAuth4.Common
 {
     public class PasetoDefaults
     {

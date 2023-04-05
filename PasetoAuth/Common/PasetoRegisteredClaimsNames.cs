@@ -1,4 +1,4 @@
-﻿namespace PasetoAuth.Common
+﻿namespace PasetoAuth4.Common
 {
     public static class PasetoRegisteredClaimsNames
     {

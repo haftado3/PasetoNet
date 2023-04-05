@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Security.Claims;
-using System.Security.Principal;
 
-namespace PasetoAuth.Common
+namespace PasetoAuth4.Common
 {
     public class PasetoTokenDescriptor
     {

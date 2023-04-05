@@ -1,25 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http.Headers;
 using System.Security.Claims;
-using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json.Linq;
-using Paseto.Builder;
-using Paseto.Cryptography;
-using Paseto.Protocol;
-using PasetoAuth.Common;
-using PasetoAuth.Options;
-using System.Linq;
-using Microsoft.Extensions.Primitives;
-using PasetoAuth.Exceptions;
-using PasetoAuth.Interfaces;
+using PasetoAuth4.Exceptions;
+using PasetoAuth4.Interfaces;
+using PasetoAuth4.Options;
 
-namespace PasetoAuth
+namespace PasetoAuth4
 {
     public class PasetoAuthHandler : AuthenticationHandler<PasetoValidationParameters>
     {

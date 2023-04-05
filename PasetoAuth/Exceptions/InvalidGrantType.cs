@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace PasetoAuth.Exceptions
+namespace PasetoAuth4.Exceptions
 {
     public class InvalidGrantType : Exception
     {

@@ -1,13 +1,12 @@
 ﻿using System;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
-using PasetoAuth.Common;
-using PasetoAuth.Interfaces;
-using PasetoAuth.Options;
+using PasetoAuth4.Common;
+using PasetoAuth4.Interfaces;
+using PasetoAuth4.Options;
 
-namespace PasetoAuth
+namespace PasetoAuth4
 {
     public static class PasetoAuthExtensions
     {

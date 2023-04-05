@@ -1,19 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Security.Claims;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json.Linq;
+using Paseto;
 using Paseto.Builder;
-using Paseto.Cryptography;
+using Paseto.Cryptography.Key;
 using Paseto.Protocol;
-using PasetoAuth.Exceptions;
-using PasetoAuth.Interfaces;
-using PasetoAuth.Options;
+using PasetoAuth4.Exceptions;
+using PasetoAuth4.Interfaces;
+using PasetoAuth4.Options;
 
-namespace PasetoAuth.Common
+namespace PasetoAuth4.Common
 {
     public class PasetoTokenHandler : IPasetoTokenHandler
     {
@@ -34,24 +34,24 @@ namespace PasetoAuth.Common
             DateTime expirationDate = descriptor.Expires ?? now.AddSeconds(_validationParameters.DefaultExpirationTime);
             string audience = descriptor.Audience ?? _validationParameters.Audience;
             string issuer = descriptor.Issuer ?? _validationParameters.Issuer;
-
-            PasetoBuilder<Version2> pasetoBuilder = new PasetoBuilder<Version2>()
-                .WithKey(GenerateKeyPairAsync(_validationParameters.SecretKey).Result.privateKey)
-                .AsPublic()
-                .AddClaim(RegisteredClaims.Audience, audience)
-                .AddClaim(RegisteredClaims.Issuer, issuer)
-                .AddClaim(PasetoRegisteredClaimsNames.IssuedAt, now)
+            var key = GenerateKeyPairAsync(_validationParameters.SecretKey).Result;
+            var privateKey = new PasetoAsymmetricSecretKey(key.SecretKey.Key,new Version4());
+            PasetoBuilder pasetoBuilder = new PasetoBuilder()
+                .UseV4(Purpose.Public)
+                .WithKey(privateKey)
+                .Audience(audience)
+                .Issuer(issuer)
+                .IssuedAt(now)
                 .Expiration(expirationDate);
             if (!descriptor.NotBefore.Equals(null))
                 pasetoBuilder.AddClaim(RegisteredClaims.NotBefore, descriptor.NotBefore);
             foreach (Claim claim in descriptor.Subject.Claims)
                 pasetoBuilder.AddClaim(claim.Type, claim.Value);
 
-            pasetoToken.Token = pasetoBuilder.Build();
+            pasetoToken.Token = pasetoBuilder.Encode();
             pasetoToken.CreatedAt = now;
             pasetoToken.ExpiresAt = expirationDate;
-            if (_validationParameters != null && _validationParameters.PasetoRefreshTokenProvider != null &&
-                _validationParameters.UseRefreshToken.HasValue && _validationParameters.UseRefreshToken.Value)
+            if (_validationParameters is { PasetoRefreshTokenProvider: { }, UseRefreshToken: { } } && _validationParameters.UseRefreshToken.Value)
             {
                 pasetoToken.RefreshToken = _validationParameters.PasetoRefreshTokenProvider
                     .CreateAsync(descriptor.Subject).Result;
@@ -59,23 +59,31 @@ namespace PasetoAuth.Common
             return Task.FromResult(pasetoToken);
         }
 
-        public Task<(byte[] publicKey, byte[] privateKey)> GenerateKeyPairAsync(string secretKey)
+        //public Task<(byte[] publicKey, byte[] privateKey)> GenerateKeyPairAsync(string secretKey)
+        //{
+        //    Ed25519.KeyPairFromSeed(out var publicKey, out var privateKey,
+        //        Encoding.ASCII.GetBytes(secretKey));
+        //    return Task.FromResult((publicKey, privateKey));
+        //}        
+        public Task<PasetoAsymmetricKeyPair> GenerateKeyPairAsync(string secretKey)
         {
-            Ed25519.KeyPairFromSeed(out var publicKey, out var privateKey,
-                Encoding.ASCII.GetBytes(secretKey));
-            return Task.FromResult((publicKey, privateKey));
+            var bytes = System.Text.Encoding.UTF8.GetBytes(secretKey);
+            var keyPair = new PasetoBuilder().UseV4(Purpose.Public)
+                .GenerateAsymmetricKeyPair(bytes);
+            return Task.FromResult(keyPair);
         }
 
         public async Task<ClaimsPrincipal> DecodeTokenAsync(string token)
         {
-            string decodedToken = new PasetoBuilder<Version2>()
-                .AsPublic()
-                .WithKey(GenerateKeyPairAsync(_validationParameters.SecretKey).Result.publicKey)
+            var key = GenerateKeyPairAsync(_validationParameters.SecretKey).Result;
+            var publicKey = new PasetoAsymmetricPublicKey(key.PublicKey.Key, new Version4());
+            var decodedToken = new PasetoBuilder().UseV4(Purpose.Public)
+                .WithKey(publicKey)
                 .Decode(token);
-
-            JObject deserializedObject = JObject.Parse(decodedToken);
-            if (Convert.ToDateTime(deserializedObject["exp"]).CompareTo(DateTime.Now) < 0 ||
-                Convert.ToDateTime(deserializedObject["nbf"]).CompareTo(DateTime.Now) > 0)
+            var json = decodedToken.Paseto.Payload.ToJson();
+            JObject deserializedObject = JObject.Parse(json);
+            if (Convert.ToDateTime(deserializedObject[PasetoRegisteredClaimsNames.ExpirationTime]).CompareTo(DateTime.Now) < 0 ||
+                Convert.ToDateTime(deserializedObject[PasetoRegisteredClaimsNames.NotBefore]).CompareTo(DateTime.Now) > 0)
                 throw new ExpiredToken();
 
             List<Claim> claimsList = new List<Claim>();
@@ -114,7 +122,7 @@ namespace PasetoAuth.Common
             });
 
             AuthenticationScheme authenticationScheme =
-                await _authenticationSchemeProvider.GetDefaultAuthenticateSchemeAsync();
+                await _authenticationSchemeProvider.GetSchemeAsync(PasetoDefaults.Bearer);
 
             ClaimsIdentity identity = new ClaimsIdentity(claimsList, authenticationScheme.Name);
             return new ClaimsPrincipal(identity);

@@ -1,9 +1,8 @@
 ﻿using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using PasetoAuth.Common;
 
-namespace PasetoAuth.Interfaces
+namespace PasetoAuth4.Interfaces
 {
     public interface IPasetoRefreshTokenProvider
     {

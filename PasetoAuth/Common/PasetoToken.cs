@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace PasetoAuth.Common
+namespace PasetoAuth4.Common
 {
     public class PasetoToken
     {

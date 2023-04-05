@@ -1,9 +1,12 @@
 ﻿using System;
 using Microsoft.AspNetCore.Authentication;
-using PasetoAuth.Interfaces;
+using PasetoAuth4.Interfaces;
 
-namespace PasetoAuth.Options
+namespace PasetoAuth4.Options
 {
+    /// <summary>
+    /// this class should be defined inside appsetting.json and registered in configuration settings
+    /// </summary>
     public class PasetoValidationParameters : AuthenticationSchemeOptions
     {
         public string SecretKey { get; set; }

@@ -1,8 +1,7 @@
 ﻿using System;
-using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.Extensions.Options;
 
-namespace PasetoAuth.Options
+namespace PasetoAuth4.Options
 {
     public class PasetoValidationParametersPostConfigure : IPostConfigureOptions<PasetoValidationParameters>
     {
@@ -10,7 +9,7 @@ namespace PasetoAuth.Options
         {
             if (string.IsNullOrEmpty(options.SecretKey))
                 throw new InvalidOperationException("Secret key is required.");
-            if (options.SecretKey.Length < 32 || options.SecretKey.Length > 32)
+            if (options.SecretKey.Length is < 32 or > 32)
                 throw new InvalidOperationException("Secret key must have 32 chars.");
             if (options.UseRefreshToken.HasValue && options.UseRefreshToken.Value)
             {
